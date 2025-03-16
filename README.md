@@ -21,13 +21,13 @@ Home serves as the medium for:
 
 ## Category
 Category serves as a habit organizer. Hence, users could work towards a certain "goal" or categorize their habits as needed. 
-<br/> In each specific category page, we could see:
+<br/><br/>In each specific category page, we could see:
 - The habits sorted from the one with highest completion rate to the lowest
 - The percentage of completion for each habit since the habit creation date.
 
 ## Rewards
 Skinner's theory of operant conditioning, especially in his work on reinforcement (1938), emphasized that behavior that is reinforced (even by small rewards) is more likely to continue.
-<br/> Inspired by this theory, Rewards (or Wishlist) page serves as a motivator for the users. By completing habits, users could get coins which they could use to redeem their rewards/wishlist. This serves as "mini reward" to motivate the user to stick to his habit. 
+<br/><br/> Inspired by this theory, Rewards (or Wishlist) page serves as a motivator for the users. By completing habits, users could get coins which they could use to redeem their rewards/wishlist. This serves as "mini reward" to motivate the user to stick to his habit. 
 
 ## Future Improvement
 1. Cute pet reminder widget! 
