@@ -1,16 +1,35 @@
-# habit_tracker
-
-A new Flutter project.
-
 ## Getting Started
+```shell
+//Before you begin
+flutter pub get
+flutter pub run build_runner build
 
-This project is a starting point for a Flutter application.
+//To run the project
+flutter clean
+flutter pub get
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+# habit_tracker
+This habit tracker app has 3 tabs: Home, Category, and Rewards
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Home
+Home serves as the medium for: 
+- Daily habit logging, consisting of heat map, in which the darker the color the higher the completion rate.
+- Remove habit (By sliding from left to right)
+- Edit habit (By sliding from right to left)
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Category
+Category serves as a habit organizer. Hence, users could work towards a certain "goal" or categorize their habits as needed. 
+<br/> In each specific category page, we could see the habits sorted from the one with highest completion rate to the lowest and also the percentage of completion for each habit since the habit creation date.
+
+## Rewards
+Skinner's theory of operant conditioning, especially in his work on reinforcement (1938), emphasized that behavior that is reinforced (even by small rewards) is more likely to continue.
+Inspired by this theory, Rewards (or Wishlist) page serves as a motivator for the users. By completing habits, users could get coins which they could use to redeem their rewards/wishlist. This serves as "mini reward" to motivate the user to stick to his habit. 
+
+## Future Improvement
+1. Cute pet reminder widget! 
+Reminder/Notification will help users in sticking to their habits. Instead of just sending users reminder notification, we could create a pet widget (that is on trend recently) to help remind users to log habit. 
+2. Analytics 📊 
+Users should be able to view the monthly summary of the habits logged. In addition, by clicking on specific date on the heat map, users should be able to see what habits they did, or did not, complete in the past. 
+
