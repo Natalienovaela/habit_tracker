@@ -28,8 +28,8 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.category.title);
     category = widget.category;
+    _titleController = TextEditingController(text: category.title);
   }
 
   @override
@@ -40,28 +40,26 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
   }
 
   void _saveChanges(String newTitle) {
-    if (_debounceTimer != null && _debounceTimer!.isActive) {
-      _debounceTimer!.cancel();
-    }
-
-    _debounceTimer = Timer(const Duration(seconds: 3), () {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(seconds: 1), () async {
       try {
-        List<Habit> habits = category.habits!;
-        if (habits.isNotEmpty) {
-          for (var habit in habits) {
-            habitService.changeCategoryTitle(habit.key, newTitle);
-          }
-        }
-        final updatedCategory = Category(title: newTitle, habits: habits);
-        categoryBox.put(widget.category.key, updatedCategory);
+        habitService.changeCategoryTitle(category.title, newTitle);
+
+        // Update local category and save the new title in Hive
+        setState(() {
+          category = categoryBox.values
+              .firstWhere((element) => element.title == newTitle);
+        });
+
         print('Category updated: $newTitle');
       } catch (error) {
+        print(error);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Failed to change title: $error"),
             behavior: SnackBarBehavior.floating,
             margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-            duration: Duration(seconds: 1), // Shortens the display time
+            duration: Duration(seconds: 1),
           ),
         );
       }
@@ -102,6 +100,7 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
                         icon: Icon(Icons.check),
                         onPressed: () {
                           setState(() {
+                            print(_titleController.text);
                             _isEditing = false;
                             _saveChanges(_titleController.text);
                           });
@@ -142,22 +141,18 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
           child: ValueListenableBuilder(
             valueListenable: categoryBox.listenable(),
             builder: (context, Box categoryBox, _) {
-              print(category);
               final habits = category.habits;
-              print(habits);
               if (habits == null || habits.isEmpty) {
                 return Center(
                   child: SizedBox(
-                    width: double.infinity, // Makes the Column take full width
+                    width: double.infinity,
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment:
-                          CrossAxisAlignment.center, // Ensures text is centered
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
                           "No habits tracked. Start tracking now!",
-                          textAlign: TextAlign
-                              .center, // Ensures text alignment is centered
+                          textAlign: TextAlign.center,
                           style: theme.textTheme.headlineSmall!
                               .copyWith(color: Colors.cyan[900]),
                         ),
@@ -169,21 +164,16 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
               habits.sort((a, b) {
                 DateTime now = DateTime.now();
 
-                // Calculate age in days
-                int ageA = now.difference(a.creationDate).inDays +
-                    1; // Avoid division by zero
+                int ageA = now.difference(a.creationDate).inDays + 1;
                 int ageB = now.difference(b.creationDate).inDays + 1;
 
-                // Completion density (higher is better)
                 double densityA = a.completedDates!.length / ageA;
                 double densityB = b.completedDates!.length / ageB;
 
-                // Sort by density first, then by title
-                int densityComparison =
-                    densityB.compareTo(densityA); // Higher first
+                int densityComparison = densityB.compareTo(densityA);
                 if (densityComparison != 0) return densityComparison;
 
-                return a.title.compareTo(b.title); // Alphabetical fallback
+                return a.title.compareTo(b.title);
               });
               return ListView.builder(
                 padding: EdgeInsets.only(right: 5, left: 5, bottom: 5),
@@ -192,17 +182,21 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
                 itemBuilder: (context, index) {
                   final habit = habits[index];
                   DateTime now = DateTime.now();
-
-                  // Calculate age in days
                   int ageA = now.difference(habit.creationDate).inDays + 1;
                   double densityA = habit.completedDates!.length / ageA;
-                  print(habit.completedDates!.length);
-                  print(ageA);
-                  print(densityA);
 
                   return Dismissible(
                     key: Key(habit.key.toString()),
-                    direction: DismissDirection.startToEnd,
+                    direction: DismissDirection.horizontal,
+                    confirmDismiss: (direction) async {
+                      if (direction == DismissDirection.startToEnd) {
+                        return true;
+                      } else if (direction == DismissDirection.endToStart) {
+                        _showEditHabitDialog(context, habit);
+                        return false;
+                      }
+                      return false;
+                    },
                     onDismissed: (direction) {
                       // Handle Delete Action
                       Category category = categoryBox.values
@@ -217,8 +211,7 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
                           behavior: SnackBarBehavior.floating,
                           margin:
                               EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                          duration:
-                              Duration(seconds: 1), // Shortens the display time
+                          duration: Duration(seconds: 1),
                         ),
                       );
                     },
@@ -273,6 +266,118 @@ class _CategoryHabitPageState extends State<CategoryHabitPage> {
           ),
         ),
       ]),
+    );
+  }
+
+  void _showEditHabitDialog(BuildContext context, Habit habit) {
+    final habitTitleController = TextEditingController(text: habit.title);
+    final coinsController =
+        TextEditingController(text: habit.coinAmount.toString());
+
+    List<Category> categories = categoryBox.values.toList();
+    String categoryTitle =
+        habit.categoryTitle; // Pre-fill category with existing value
+    String? errorMessage;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text("Edit Habit"),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: habitTitleController,
+                    decoration: InputDecoration(
+                      labelText: "Habit Title",
+                      errorText: errorMessage,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: categoryTitle,
+                    items: categories.map((category) {
+                      return DropdownMenuItem(
+                        value: category.title,
+                        child: Text(category.title),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        categoryTitle = value!;
+                      });
+                    },
+                    decoration: InputDecoration(labelText: "Category"),
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: coinsController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Coins",
+                      icon: Icon(Icons.attach_money, color: Colors.amber),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  final habitTitle = habitTitleController.text.trim();
+                  final coins = int.tryParse(coinsController.text) ?? 0;
+
+                  if (habitTitle.isNotEmpty) {
+                    bool titleExists = habitBox.values.any((h) =>
+                        h.title.toLowerCase() == habitTitle.toLowerCase() &&
+                        h.key != habit.key);
+
+                    if (titleExists) {
+                      setState(() {
+                        errorMessage = "Habit title already exists";
+                      });
+                    } else {
+                      setState(() {
+                        errorMessage = null;
+                      });
+
+                      try {
+                        final newHabit = Habit(
+                          title: habitTitle,
+                          categoryTitle: categoryTitle,
+                          coinAmount: coins,
+                          creationDate: habit.creationDate,
+                          completedDates: habit.completedDates,
+                        );
+                        habitService.editHabit(habit, newHabit, categoryTitle);
+                      } catch (error) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Failed to edit habit: $error"),
+                            behavior: SnackBarBehavior.floating,
+                            margin: EdgeInsets.only(
+                                bottom: 80, left: 16, right: 16),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+                child: Text("Save"),
+              ),
+            ],
+          );
+        });
+      },
     );
   }
 }

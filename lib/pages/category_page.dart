@@ -3,6 +3,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:namer_app/boxes.dart';
 import 'package:namer_app/models/category.dart';
 import 'package:namer_app/models/habit.dart';
+import 'package:namer_app/services/category_service.dart';
+import 'package:namer_app/services/other_service.dart';
 import 'package:namer_app/widgets/category_tile.dart';
 
 class CategoryPage extends StatefulWidget {
@@ -13,6 +15,8 @@ class CategoryPage extends StatefulWidget {
 }
 
 class _CategoryPageState extends State<CategoryPage> {
+  final categoryService = CategoryService();
+  final otherService = OtherService();
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -41,29 +45,10 @@ class _CategoryPageState extends State<CategoryPage> {
                     key: Key(category.key.toString()),
                     direction: DismissDirection.startToEnd,
                     onDismissed: (direction) {
-                      // Handle Delete Action
-                      List<Habit> habits = habitBox.values
-                          .where(
-                              (habit) => habit.categoryTitle == category.title)
-                          .toList();
-                      if (habits.isNotEmpty) {
-                        for (var habit in habits) {
-                          habitBox.delete(habit.key);
-                        }
-                      }
-
-                      categoryBox.delete(category.key);
+                      categoryService.deleteCategory(category);
 
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("${category.title} deleted"),
-                          behavior: SnackBarBehavior.floating,
-                          margin:
-                              EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                          duration:
-                              Duration(seconds: 1), // Shortens the display time
-                        ),
-                      );
+                          otherService.message("${category.title} deleted"));
                     },
                     background: Container(
                       color: Colors.red,
@@ -173,16 +158,8 @@ class _CategoryPageState extends State<CategoryPage> {
                       try {
                         categoryBox.add(Category(title: categoryTitle));
                       } catch (error) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Failed to add category: $error"),
-                            behavior: SnackBarBehavior.floating,
-                            margin: EdgeInsets.only(
-                                bottom: 80, left: 16, right: 16),
-                            duration: Duration(
-                                seconds: 1), // Shortens the display time
-                          ),
-                        );
+                        ScaffoldMessenger.of(context).showSnackBar(otherService
+                            .message("Failed to add category: $error"));
                       }
                       Navigator.pop(context); // Close the dialog
                     }

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:namer_app/boxes.dart';
 import 'package:namer_app/models/coin.dart';
+import 'package:namer_app/models/date_summary.dart';
 import 'package:namer_app/pages/category_page.dart';
 import 'package:namer_app/pages/home_page.dart';
 import 'package:namer_app/pages/reward_page.dart';
+import 'package:namer_app/services/other_service.dart';
 import 'package:provider/provider.dart';
 import 'package:namer_app/models/habit.dart';
 import 'package:namer_app/models/category.dart';
@@ -16,11 +18,16 @@ void main() async {
   Hive.registerAdapter(CategoryAdapter());
   Hive.registerAdapter(RewardAdapter());
   Hive.registerAdapter(CoinAdapter());
+  Hive.registerAdapter(DateSummaryAdapter());
 
   // Delete all stored Hive boxes
-  // await Hive.deleteBoxFromDisk('categories');
-  // await Hive.deleteBoxFromDisk('habits');
-  // await Hive.deleteBoxFromDisk('rewards');
+  await Hive.deleteBoxFromDisk('categories');
+  await Hive.deleteBoxFromDisk('habits');
+  await Hive.deleteBoxFromDisk('rewards');
+  await Hive.deleteBoxFromDisk("coins");
+  await Hive.deleteBoxFromDisk('datesummaries');
+
+  dateBox = await Hive.openBox<DateSummary>('datesummaries');
 
   categoryBox = await Hive.openBox<Category>('categories');
   await _loadCategoryBox();
@@ -33,6 +40,18 @@ void main() async {
 
   rewardBox = await Hive.openBox<Reward>('rewards');
   await _loadReward();
+
+  final otherService = OtherService();
+
+  bool exists = dateBox.values.any((date) =>
+      date.date == otherService.normalizeDate(DateTime.now()).toString());
+
+  if (!exists) {
+    dateBox.add(DateSummary(
+        date: otherService.normalizeDate(DateTime.now()).toString(),
+        habitCompleted: [],
+        habitIncompleted: habitBox.values.toList()));
+  }
 
   runApp(MyApp());
 }
@@ -48,16 +67,17 @@ Future<void> _loadCategoryBox() async {
 }
 
 Future<void> _loadHabitBox() async {
-  Category categoryHealth = categoryBox.values.firstWhere(
-    (element) => element.title == "Health",
-  );
-  Category categoryWellness = categoryBox.values.firstWhere(
-    (element) => element.title == "Wellness",
-  );
-  Category categoryKnowledge = categoryBox.values.firstWhere(
-    (element) => element.title == "Knowledge",
-  );
+  final otherService = OtherService();
   if (habitBox.isEmpty) {
+    Category categoryHealth = categoryBox.values.firstWhere(
+      (element) => element.title == "Health",
+    );
+    Category categoryWellness = categoryBox.values.firstWhere(
+      (element) => element.title == "Wellness",
+    );
+    Category categoryKnowledge = categoryBox.values.firstWhere(
+      (element) => element.title == "Knowledge",
+    );
     var drinkWaterHabit = Habit(
       title: "Drink Water",
       categoryTitle: "Health",
@@ -97,6 +117,41 @@ Future<void> _loadHabitBox() async {
       readBookHabit,
       meditationHabit,
     ]);
+
+    dateBox.add(DateSummary(
+        date: otherService
+            .normalizeDate(DateTime.now().subtract(Duration(days: 1)))
+            .toString(),
+        habitCompleted: [drinkWaterHabit, exerciseHabit],
+        habitIncompleted: []));
+
+    dateBox.add(DateSummary(
+        date: otherService
+            .normalizeDate(DateTime.now().subtract(Duration(days: 2)))
+            .toString(),
+        habitCompleted: [drinkWaterHabit],
+        habitIncompleted: [exerciseHabit]));
+
+    dateBox.add(DateSummary(
+        date: otherService
+            .normalizeDate(DateTime.now().subtract(Duration(days: 3)))
+            .toString(),
+        habitCompleted: [drinkWaterHabit],
+        habitIncompleted: []));
+
+    dateBox.add(DateSummary(
+        date: otherService
+            .normalizeDate(DateTime.now().subtract(Duration(days: 4)))
+            .toString(),
+        habitCompleted: [],
+        habitIncompleted: [drinkWaterHabit]));
+
+    dateBox.add(DateSummary(
+        date: otherService
+            .normalizeDate(DateTime.now().subtract(Duration(days: 5)))
+            .toString(),
+        habitCompleted: [],
+        habitIncompleted: [drinkWaterHabit]));
 
     // Update the respective categories with the new habits
     categoryHealth.habits?.add(drinkWaterHabit);

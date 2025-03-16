@@ -14,7 +14,6 @@ class HabitTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print(density);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Stack(

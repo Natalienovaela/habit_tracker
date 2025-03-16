@@ -41,8 +41,6 @@ class HabitCheckboxTile extends StatelessWidget {
                               Duration(seconds: 1), // Shortens the display time
                         ),
                       );
-
-                      print(habit.completedDates!.length);
                     } else {
                       habitService.markHabitAsCompleted(habit.key);
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,7 +53,6 @@ class HabitCheckboxTile extends StatelessWidget {
                               Duration(seconds: 1), // Shortens the display time
                         ),
                       );
-                      print(habit.completedDates!.length);
                     }
                   }),
               Text(habit.title,

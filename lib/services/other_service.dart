@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class OtherService {
   String formatDate(DateTime date) {
     return '${date.day.toString()} ${convertMonth(date.month)} ${date.year.toString()}';
@@ -32,5 +34,18 @@ class OtherService {
       default:
         return "";
     }
+  }
+
+  SnackBar message(String message) {
+    return SnackBar(
+      content: Text(message),
+      behavior: SnackBarBehavior.floating,
+      margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
+      duration: Duration(seconds: 1), // Shortens the display time
+    );
+  }
+
+  DateTime normalizeDate(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
   }
 }
